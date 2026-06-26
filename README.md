@@ -184,5 +184,3 @@ This project is released for educational and research purposes. Feel free to use
 ## Author
 
 **Steven Joshua**
-
-Designed and developed as a complete educational RISC-V SoC platform demonstrating processor design, bus protocols, peripheral integration, and embedded hardware/software co-design.
