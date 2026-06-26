@@ -1,6 +1,6 @@
 # JS-SoC
 
-**JS-SoC** is a 32-bit single-cycle **RISC-V System-on-Chip (SoC)** implemented entirely in **SystemVerilog**. The project demonstrates the complete design and integration of a custom RV32I processor with an **Advanced Peripheral Bus (APB)** architecture and multiple memory-mapped peripherals. It serves as an educational and development platform for learning processor architecture, digital design, and embedded system integration.
+**JS-SoC** is a 32-bit single-cycle **RISC-V System-on-Chip (SoC)** implemented entirely in **SystemVerilog**. The project demonstrates the complete design and integration of a custom RV32I processor with an **Advanced Peripheral Bus (APB)** architecture and multiple memory-mapped peripherals. 
 
 ---
 
