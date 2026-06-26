@@ -18,7 +18,6 @@
 * ✅ PWM Peripheral
 * ✅ Timer Peripheral
 * ✅ Java-Based Control Word Generator
-* ✅ Complete System-Level Simulation and Verification
 
 ---
 
