@@ -115,8 +115,8 @@ Typical applications include:
 | ------------ | ----------- |
 | `0x00000000` | Data Memory |
 | `0x40000000` | UART        |
-| `0x40000004` | PWM         |
-| `0x40000008` | Timer       |
+| `0x40000008` | PWM         |
+| `0x4000000C` | Timer       |
 
 ---
 
