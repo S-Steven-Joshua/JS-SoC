@@ -176,7 +176,7 @@ Planned improvements include:
 
 ## License
 
-This project is released for educational and research purposes. Feel free to use, modify, and extend the design while providing appropriate attribution.
+This project is released for educational and research purposes. Feel free to use, modify, and extend the design while providing appropriate contribution.
 
 ---
 
