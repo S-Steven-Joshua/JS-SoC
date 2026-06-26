@@ -9,3 +9,4 @@ sw    x6,0(x5)
 beq   x0,x0,0
 
 // 1MHz 20% duty cycle
+//to stop write 0 to the control word
