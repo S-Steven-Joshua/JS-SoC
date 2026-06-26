@@ -30,7 +30,7 @@
                     | (Single-Cycle Core)  |
                     +----------+-----------+
                                |
-                        Memory Interface
+                             Bridge
                                |
                           APB Master
                                |
