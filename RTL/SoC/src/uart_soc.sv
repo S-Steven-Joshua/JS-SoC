@@ -37,7 +37,7 @@ module uart_soc(
     logic [7:0] data_tx;
     //tx
     logic busy;
-    //logic tx;
+    logic tx;
     //rx
     logic ready;
     logic [7:0] data_rx;
