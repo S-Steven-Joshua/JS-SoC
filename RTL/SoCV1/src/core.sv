@@ -25,6 +25,8 @@ module core(
     input logic rst,
     input logic [31:0] instr,
     input logic [31:0] read_data,
+    input logic [31:0] ram_data_out,
+    input logic data_sel,
     output logic [31:0] pc,
     output logic [31:0] alu_result,
     output logic [31:0] write_data,
@@ -45,5 +47,6 @@ module core(
     datapath data(.clk(clk),.rst(rst),.result_src(result_src),.alu_src(alu_src),
                   .pc_src(pc_src),.reg_write(reg_write),.imm_src(imm_src),.src_a(src_a),
                   .alu_con(alu_con),.instr(instr),.read_data(read_data),
-                  .zero(zero),.pc(pc),.alu_result(alu_result),.write_data(write_data));
+                  .zero(zero),.pc(pc),.alu_result(alu_result),.write_data(write_data),
+                  .ram_data_out(ram_data_out),.data_sel(data_sel));
 endmodule:core

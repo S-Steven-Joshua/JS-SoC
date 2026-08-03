@@ -32,6 +32,8 @@ module datapath(
     input logic [3:0] alu_con,
     input logic [31:0] instr,
     input logic [31:0] read_data,
+    input logic [31:0] ram_data_out,
+    input logic data_sel,
     output logic zero,
     output logic [31:0] pc,
     output logic [31:0] alu_result,
@@ -44,6 +46,7 @@ module datapath(
     logic [31:0] srca;
     logic [31:0] result;
     logic [31:0] rd2_wire;
+    logic [31:0] temp_data;
     //program counter logic 
     d_ff d_ff1(.clk(clk),.rst(rst),.d(pcnext),.out(pc));//d flip flop for PC
     adder a1(.a(pc),.b(32'd4),.c(pcplus4));//pc+4
@@ -61,6 +64,7 @@ module datapath(
     mux_2 mm2(.a(sra),.b(32'b0),.sel(src_a),.y(srca));
     alu alu1(.alu_con(alu_con),.a(srca),.b(srb),.zero(zero),.result(alu_result));//ALU 
     assign pcjalr={alu_result[31:1],1'b0};//alu_result directly for jalr
-    mux_3 m3(.a(alu_result),.b(read_data),.c(pcplus4),.sel(result_src),.y(result));//selection for register
+    mux_2 mmm2(.a(read_data),.b(ram_data_out),.sel(data_sel),.y(temp_data));
+    mux_3 m3(.a(alu_result),.b(temp_data),.c(pcplus4),.sel(result_src),.y(result));//selection for register
     
 endmodule:datapath

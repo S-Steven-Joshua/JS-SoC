@@ -37,6 +37,7 @@ module bridge(
     output logic [7:0]  data_out_slave,
     output logic [7:0] peri_data_i2c,
     output logic [31:0] ram_data_out,
+    output logic data_sel,
     output logic scl,
     inout logic sda,
     output logic wave,
@@ -52,6 +53,8 @@ module bridge(
     logic full;
     logic apb_write;
     assign apb_range=(addr >=32'h4000_0000 && addr<=32'h4000_0018);
+    assign read_en=((instr[6:0] == 7'h03 && instr[14:12] == 3'b010) && (addr >= 32'd0 && addr<=32'd31));
+    assign data_sel=read_en;//0 for dmem data and 1 for ram data
     always_comb
     begin
         dmem_write=0;
@@ -98,7 +101,7 @@ module bridge(
                           .data_in_i2c(peri_data_i2c),
                           .data_in_uart(peri_data_uart),
                           .read_en(read_en),
-                          .address(address_ram),
+                          .address(addr[4:0]),
                           .data_out(ram_data_out)
                           );
            

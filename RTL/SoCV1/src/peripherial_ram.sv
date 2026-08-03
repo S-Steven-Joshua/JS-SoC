@@ -55,11 +55,13 @@ module peripherial_ram (
             begin
                 ram[i2c_counter + 8] <= {24'b0,data_in_i2c[7:0]};
                 i2c_counter <= i2c_counter + 1'b1;
+                ram[31][0]  <=1'b1;
             end
             if(wr_en_uart)
             begin
                 ram[uart_counter] <= data_in_uart;
                 uart_counter <=uart_counter+1'b1;
+                ram[31][1]   <=1'b1;
             end
         end
     end
