@@ -444,38 +444,6 @@ The **LibreLane-based implementation flow** will be developed and maintained in 
 
 ---
 
-# Project Structure
-
-A simplified project structure is shown below:
-
-```text
-JS-SoC/
-├── RTL/
-│   ├── CPU/
-│   ├── Memory/
-│   ├── Bridge/
-│   ├── APB/
-│   └── Peripherals/
-│       ├── UART/
-│       ├── PWM/
-│       ├── Timer/
-│       └── I2C/
-│
-├── Testbench/
-│   ├── CPU/
-│   ├── Peripherals/
-│   └── SoC/
-│
-├── Java/
-│   └── ControlWordGenerator/
-│
-└── README.md
-```
-
-> The structure above is illustrative. Update directory names if they differ from the actual repository structure.
-
----
-
 # License
 
 This project is released for educational and research purposes.
@@ -487,4 +455,5 @@ Feel free to use, modify, and extend the design while providing appropriate attr
 # Author
 
 **Steven Joshua**
+**Swatish Subramanian**
 
