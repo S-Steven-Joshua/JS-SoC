@@ -1,12 +1,14 @@
 # JS-SoC
 
-**JS-SoC** is a 32-bit single-cycle **RISC-V System-on-Chip (SoC)** implemented entirely in **SystemVerilog**. The project integrates a custom **RV32I processor**, an **APB-based peripheral subsystem**, and an independent **Peripheral RAM** for peripheral-to-processor data transfer.
+**JS-SoC** is a 32-bit single-cycle **RISC-V System-on-Chip (SoC)** implemented entirely in **SystemVerilog**. The project integrates a custom **RV32I processor**, an **APB-based peripheral subsystem**, an independent **Peripheral RAM** for peripheral-to-processor data transfer, and a hardware **bootloader for dynamic instruction-memory initialization**.
 
-The primary goal of JS-SoC is to demonstrate the design and integration of a complete RISC-V-based SoC, including processor datapath, memory system, APB interconnect, memory-mapped peripherals, and peripheral write-back functionality.
+The primary goal of JS-SoC is to demonstrate the design and integration of a complete RISC-V-based SoC, including processor datapath, memory system, APB interconnect, memory-mapped peripherals, peripheral write-back functionality, and dynamic program loading.
+
+The current design has been **integrated and functionally verified at the SoC level, including the bootloader**. The complete RTL design has also been **lint-checked with no reported linting errors**.
 
 ---
 
-## Features
+# Features
 
 * ✅ 32-bit RV32I Single-Cycle RISC-V Processor
 * ✅ Custom ALU and Control Unit
@@ -24,12 +26,19 @@ The primary goal of JS-SoC is to demonstrate the design and integration of a com
 * ✅ Independent Peripheral RAM
 * ✅ Peripheral-to-CPU Write-Back Path
 * ✅ Data-Path MUX for Data Memory / Peripheral RAM Selection
+* ✅ Bootloader for Dynamic IMEM Initialization
+* ✅ Bootloader Integrated with JS-SoC
+* ✅ Bootloader Functional Verification
+* ✅ Standard RISC-V GCC Toolchain Compatibility
 * ✅ Java-Based Control Word Generator
 * ✅ SystemVerilog Functional Verification
+* ✅ Complete SoC Functional Verification
+* ✅ Complete RTL Linting
+* ✅ No Linting Errors in the Entire Design
 
 ---
 
-## System Architecture
+# System Architecture
 
 ```text
                          +----------------------+
@@ -37,44 +46,68 @@ The primary goal of JS-SoC is to demonstrate the design and integration of a com
                          |    Single-Cycle      |
                          +----------+-----------+
                                     |
-                           Load / Store Access
+                            Load / Store Access
                                     |
-                              +-----+-----+
-                              |   Bridge  |
-                              +-----+-----+
+                               +-----+-----+
+                               |   Bridge  |
+                               +-----+-----+
                                     |
-                    +---------------+---------------+
-                    |                               |
-              Normal Memory                   APB Peripheral
-                 Access                           Access
-                    |                               |
-                    v                               v
-             +-------------+              +----------------+
-             | Data Memory |              |   APB Master   |
-             +-------------+              +-------+--------+
+                     +--------------+--------------+
+                     |                             |
+               Normal Memory                APB Peripheral
+                  Access                       Access
+                     |                             |
+                     v                             v
+              +-------------+              +----------------+
+              | Data Memory |              |   APB Master   |
+              +-------------+              +-------+--------+
                                                     |
-                              +---------------------+---------------------+
-                              |          |            |                  |
-                             UART        PWM         Timer               I²C
-                              |          |            |                  |
-                              +----------+------------+------------------+
+                               +--------------------+--------------------+
+                               |          |            |                  |
+                              UART        PWM         Timer               I²C
+                               |          |            |                  |
+                               +----------+------------+------------------+
                                                     |
-                                         Peripheral Write-Back
+                                             Peripheral Write-Back
                                                     |
                                                     v
-                                           +----------------+
-                                           | Peripheral RAM |
-                                           |     [31:0]     |
-                                           +-------+--------+
-                                                   |
-                                                   v
-                                            +--------------+
-                                            | Data-Path    |
-                                            |     MUX      |
-                                            +------+-------+
-                                                   |
-                                                   v
-                                             CPU Writeback
+                                            +----------------+
+                                            | Peripheral RAM |
+                                            |     [31:0]     |
+                                            +-------+--------+
+                                                    |
+                                                    v
+                                              +--------------+
+                                              | Data-Path    |
+                                              |     MUX      |
+                                              +------+-------+
+                                                     |
+                                                     v
+                                                CPU Writeback
+
+
+                    Boot / Instruction Loading Path
+
+                         External Boot Data
+                                |
+                                | 8-bit
+                                v
+                         +-------------+
+                         | Bootloader  |
+                         +------+------+ 
+                                |
+                    32-bit instruction
+                    Address / Write Enable
+                                |
+                                v
+                         +-------------+
+                         |    IMEM     |
+                         +------+------+ 
+                                |
+                                v
+                         +-------------+
+                         |   RV32I CPU |
+                         +-------------+
 ```
 
 ---
@@ -85,7 +118,7 @@ The processor implements the **RISC-V RV32I instruction set architecture** using
 
 Each instruction is fetched, decoded, executed, and completed within a single clock cycle.
 
-### Core Components
+## Core Components
 
 * Program Counter (PC)
 * Instruction Memory (IMEM)
@@ -101,6 +134,105 @@ The processor accesses peripherals through standard RISC-V load (`LW`) and store
 
 ---
 
+# Bootloader
+
+The JS-SoC includes a hardware bootloader that provides **dynamic instruction-memory initialization**.
+
+The bootloader receives instruction data as 8-bit transfers and assembles four consecutive bytes into a 32-bit instruction before writing the instruction to IMEM.
+
+## Bootloader Features
+
+* 8-bit input data interface
+* 32-bit instruction assembly
+* Four-byte instruction loading
+* Configurable instruction count
+* Automatic IMEM address increment
+* `ready` handshake
+* `imem_write` instruction-memory write control
+* `hold` processor hold control
+* `sel` bootloader/IMEM selection
+* Synchronous active-high reset
+* FSM-based control
+* Synthesizable SystemVerilog RTL
+
+## Instruction Loading
+
+Each 32-bit instruction is received as four 8-bit values:
+
+```text
+Byte 0       Byte 1       Byte 2       Byte 3
+[31:24]      [23:16]      [15:8]       [7:0]
+   |            |            |            |
+   +------------+------------+------------+
+                         |
+                   32-bit Instruction
+```
+
+For example:
+
+```text
+32'h12345678
+```
+
+is transferred as:
+
+```text
+12 34 56 78
+```
+
+The bootloader assembles the instruction as:
+
+```text
+mem[31:24] = 8'h12
+mem[23:16] = 8'h34
+mem[15:8]  = 8'h56
+mem[7:0]   = 8'h78
+```
+
+After receiving the fourth byte, the bootloader generates the instruction-memory write pulse and stores the completed instruction at the current IMEM address.
+
+The IMEM address is then incremented automatically for the next instruction.
+
+## Bootloader FSM
+
+The bootloader uses the following states:
+
+```text
+                  +------+
+                  | idle |
+                  +--+---+
+                     |
+                     v
+             +---------------+
+             | load_counter  |
+             +-------+-------+
+                     |
+                     v
+             +---------------+
+             |   load_data   |<-----------+
+             +-------+-------+            |
+                     |                    |
+              4 bytes received            |
+                     |                    |
+                     v                    |
+             +---------------+            |
+             | increment_    |------------+
+             |    address    |
+             +-------+-------+
+                     |
+                     | All instructions loaded
+                     v
+                +---------+
+                |  done   |
+                +---------+
+```
+
+During bootloading, the processor is held using the `hold` signal so that it does not execute partially loaded instructions.
+
+After all requested instructions have been written to IMEM, the bootloader enters the `done` state and releases the processor.
+
+---
+
 # Bridge and Peripheral Access
 
 The bridge connects the processor's memory-access path to the APB peripheral subsystem.
@@ -113,19 +245,19 @@ The bridge performs address decoding for the APB peripheral address space:
 
 Only memory access operations can target the peripheral address space.
 
-### Store Access
+## Store Access
 
 For an `SW` instruction, the bridge uses the controller-generated **`mem_write`** signal to identify a store operation.
 
 If the address falls within the APB address range, the bridge generates the appropriate peripheral select signal and initiates an APB write transaction.
 
-### Load Access
+## Load Access
 
-For an `LW` instruction, the bridge checks the **instruction opcode** to identify the load operation.
+For an `LW` instruction, the bridge checks the instruction opcode to identify the load operation.
 
 If the address belongs to the APB peripheral range, the bridge performs the corresponding peripheral read operation.
 
-### Other Instructions
+## Other Instructions
 
 For instructions that are not memory accesses, the bridge ignores the APB address and data.
 
@@ -225,7 +357,7 @@ JS-SoC contains a dedicated **Peripheral RAM** that is independent of the normal
 
 The Peripheral RAM provides a mechanism for peripherals to write data back to the processor.
 
-### Peripheral Write-Back Path
+## Peripheral Write-Back Path
 
 ```text
 Peripheral
@@ -314,13 +446,65 @@ Generated control words can be written to the corresponding memory-mapped periph
 
 ---
 
+# Software Toolchain Compatibility
+
+The JS-SoC processor has been tested using the **standard RISC-V GCC toolchain**.
+
+RISC-V software can be compiled using GCC for the target RISC-V ISA and executed on the JS-SoC processor. This provides functional evidence that the implemented RV32I processor can correctly execute GCC-generated RISC-V machine code.
+
+The processor has been functionally tested with **GCC-generated RISC-V code**, and the generated instructions execute correctly on the JS-SoC processor.
+
+The current workflow supports:
+
+* Standard RISC-V GCC compilation
+* Generation of RISC-V machine code
+* Execution of GCC-generated programs on the JS-SoC processor
+* Instruction-memory initialization through the existing workflow
+* Integration of compiled RISC-V programs with the bootloader flow
+
+### Current Status
+
+**RISC-V GCC Compatibility: Verified ✅**
+
+The processor has been tested with the standard RISC-V GCC toolchain and is successfully executing GCC-generated RISC-V programs.
+
+### Potential Improvement
+
+The software workflow can be further automated by integrating:
+
+```text
+RISC-V C / Assembly
+        |
+        v
+   RISC-V GCC
+        |
+        v
+ ELF / Binary
+        |
+        v
+Boot Image Generation
+        |
+        v
+   Bootloader
+        |
+        v
+      IMEM
+        |
+        v
+     JS-SoC
+```
+
+This would provide a complete automated software-to-SoC development flow.
+
+---
+
 # Verification
 
 The functionality of JS-SoC is verified using **SystemVerilog functional testbenches** within this repository.
 
 Verification covers both individual components and complete SoC-level functionality.
 
-### Verified Functionality
+## Verified Functionality
 
 * RV32I instruction execution
 * Register operations
@@ -337,9 +521,66 @@ Verification covers both individual components and complete SoC-level functional
 * I²C functionality
 * Peripheral RAM write-back
 * Data-path MUX selection
+* Bootloader operation
+* Bootloader instruction loading
+* Bootloader integration with JS-SoC
+* Standard RISC-V GCC-generated program execution
 * End-to-end SoC functional behavior
+* End-to-end functional verification with the bootloader
 
-The functional verification is focused on validating the intended RTL behavior of the complete SoC.
+The bootloader has been integrated into the JS-SoC and its functionality has been verified as part of the complete SoC design.
+
+---
+
+# RTL Linting
+
+The **entire JS-SoC RTL design has been lint-checked**.
+
+## Lint Status
+
+**PASS — No linting errors**
+
+Linting was performed on the complete RTL design, including:
+
+* RISC-V processor
+* Instruction Memory
+* Data Memory
+* Bridge
+* APB subsystem
+* UART
+* PWM
+* Timer
+* I²C
+* Peripheral RAM
+* Data-path MUX
+* Bootloader
+* Supporting RTL modules
+
+The current RTL version has **no reported linting errors across the entire design**.
+
+---
+
+# Design Verification Status
+
+| Component / Feature                | Status     |
+| ---------------------------------- | ---------- |
+| RV32I Processor                    | ✅ Complete |
+| Instruction Memory                 | ✅ Complete |
+| Data Memory                        | ✅ Complete |
+| APB Bridge                         | ✅ Complete |
+| UART                               | ✅ Complete |
+| PWM                                | ✅ Complete |
+| Timer                              | ✅ Complete |
+| I²C                                | ✅ Complete |
+| Peripheral RAM                     | ✅ Complete |
+| Data-Path MUX                      | ✅ Complete |
+| Bootloader                         | ✅ Complete |
+| JS-SoC Bootloader Integration      | ✅ Complete |
+| RISC-V GCC Compatibility           | ✅ Verified |
+| SoC Functional Verification        | ✅ Complete |
+| Bootloader Functional Verification | ✅ Complete |
+| Complete RTL Linting               | ✅ PASS     |
+| Lint Errors                        | **None**   |
 
 ---
 
@@ -347,7 +588,7 @@ The functional verification is focused on validating the intended RTL behavior o
 
 The current implementation is a functional single-cycle SoC and has several areas that can be improved.
 
-### 1. Single-Cycle Processor
+## 1. Single-Cycle Processor
 
 The processor currently uses a single-cycle architecture.
 
@@ -357,17 +598,7 @@ As the design becomes more complex, a single-cycle implementation limits the ach
 
 ---
 
-### 2. No Bootloader
-
-Currently, the instruction memory is populated using a predefined/hardcoded instruction image.
-
-This limits flexibility because changing the application requires modifying the instruction-memory contents.
-
-**Planned improvement:** Implement a bootloader that loads instructions into IMEM during reset.
-
----
-
-### 3. Limited Peripheral Set
+## 2. Limited Peripheral Set
 
 The current SoC includes:
 
@@ -380,7 +611,7 @@ Additional commonly used interfaces such as GPIO and SPI are not currently imple
 
 ---
 
-### 4. No Interrupt Architecture
+## 3. No Interrupt Architecture
 
 The current design does not implement a general-purpose interrupt controller or interrupt-driven peripheral architecture.
 
@@ -390,7 +621,7 @@ Peripheral communication is handled through the existing memory-mapped and Perip
 
 ---
 
-### 5. Peripheral RAM Interface
+## 4. Peripheral RAM Interface
 
 The Peripheral RAM provides a dedicated peripheral-to-CPU data path, but the current mechanism is relatively simple compared with more sophisticated DMA or interrupt-driven data-transfer architectures.
 
@@ -398,7 +629,7 @@ The Peripheral RAM provides a dedicated peripheral-to-CPU data path, but the cur
 
 ---
 
-### 6. No Hardware Deployment Yet
+## 5. No Hardware Deployment Yet
 
 The current project focuses on RTL design and functional verification.
 
@@ -406,13 +637,29 @@ FPGA deployment and physical implementation are not currently part of this repos
 
 ---
 
-### 7. No Automated Software Toolchain
+## 6. Software Flow Automation
 
-The current instruction-memory workflow relies on predefined instruction contents.
+The JS-SoC processor has already been tested successfully with the **standard RISC-V GCC toolchain**, and GCC-generated RISC-V programs have been executed successfully on the processor.
 
-A complete automated flow from RISC-V assembly/C code to the IMEM image is not yet integrated into the project.
+The remaining limitation is not GCC compatibility, but rather the absence of a fully automated flow connecting all stages:
 
-The planned bootloader and future software-toolchain work will improve this workflow.
+```text
+Source Code
+    ↓
+RISC-V GCC
+    ↓
+ELF / Binary
+    ↓
+Boot Image
+    ↓
+Bootloader
+    ↓
+Instruction Memory
+    ↓
+JS-SoC
+```
+
+**Potential improvement:** Automate the conversion of GCC-generated binaries into the bootloader's expected input format and integrate the complete software-to-SoC programming flow.
 
 ---
 
@@ -420,12 +667,12 @@ The planned bootloader and future software-toolchain work will improve this work
 
 The major planned improvements include:
 
-* **Bootloader for dynamic IMEM initialization**
 * 5-stage pipelined RISC-V processor
 * GPIO peripheral
 * SPI interface
 * Improved peripheral data-transfer mechanisms
 * Automated assembly-to-machine-code workflow
+* Automated boot-image generation
 * FPGA deployment
 * ASIC implementation flow
 
@@ -439,8 +686,40 @@ The **LibreLane-based implementation flow** will be developed and maintained in 
 * **Vivado Simulator**
 * **Java**
 * **RISC-V RV32I ISA**
+* **RISC-V GCC Toolchain**
 * **Advanced Peripheral Bus (APB)**
 * **I²C Protocol**
+
+---
+
+# Project Status
+
+**JS-SoC is functionally verified and lint-clean.**
+
+The current revision includes a completed and integrated bootloader, and the bootloader has been functionally verified as part of the complete JS-SoC.
+
+The processor has also been tested using the **standard RISC-V GCC toolchain**, with GCC-generated RISC-V programs executing successfully on the processor.
+
+The **entire RTL design has been lint-checked with no reported linting errors**.
+
+```text
+JS-SoC
+│
+├── RV32I Processor             ✅
+├── Memory System               ✅
+├── APB Subsystem               ✅
+├── UART                        ✅
+├── PWM                         ✅
+├── Timer                       ✅
+├── I²C                         ✅
+├── Peripheral RAM              ✅
+├── Data-Path MUX               ✅
+├── Bootloader                  ✅
+├── SoC Integration             ✅
+├── RISC-V GCC Compatibility    ✅
+├── Functional Verification     ✅
+└── Complete RTL Linting        ✅ PASS
+```
 
 ---
 
@@ -452,9 +731,8 @@ Feel free to use, modify, and extend the design while providing appropriate attr
 
 ---
 
-# Author
+# Authors
 
 **Steven Joshua**
 
 **Swatish Subramanian**
-
